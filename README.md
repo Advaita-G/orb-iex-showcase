@@ -1,51 +1,60 @@
-# ORB-IEX — paper-trading engineering
+# ORB-IEX
 
-My Python port of a reference opening-range breakout strategy for Alpaca’s paper environment. The engineering focus is **order ownership, ambiguous broker responses, reconciliation, protective orders, and restart recovery**.
+A Python opening-range breakout bot for **Alpaca paper trading**, built around reliable order handling and recovery.
 
-**Documentation only:** implementation, broker records, runtime journals, credentials, and research files remain private. This repository cannot trade and contains no performance or profitability claim.
+The central engineering problem: **keeping local state and broker state consistent when orders partially fill, requests time out, or the process restarts**.
 
-## Implemented architecture
+This repository is an engineering case study. [Portfolio](https://advaitagupta.com)
 
-| Layer | Responsibility |
-| --- | --- |
-| Strategy | Opening-range signals, eligibility filters, sizing, and exposure checks. |
-| Broker adapter | Deterministic client order IDs, lookup after uncertain responses, and cancellation confirmation. |
-| Recovery | Reconcile broker state with durable intent; manage partial fills and protection; block entries on safety failures. |
-| Persistence | SQLite order/fill state and separate journal/export records. |
-| Operations | Heartbeat, health checks, circuit breakers, and supervised paper operation. |
+## How it works
+
+1. Filter market data, generate opening-range signals, and apply sizing and exposure checks.
+2. Persist order intent and submit through the paper broker adapter.
+3. Reconcile fills and order state, maintaining protective orders or flattening when required.
+4. Record execution events and expose heartbeat, health, and circuit-breaker state.
 
 ```mermaid
-flowchart LR
-    Data["Market data"] --> Signal["Eligibility + signal"]
-    Signal --> Risk["Sizing + safety gates"]
-    Risk --> Intent["Durable intent"]
+flowchart TD
+    Data["Market data + signals"] --> Risk["Sizing + safety gates"]
+    Risk --> Intent["Durable order intent"]
     Intent --> Broker["Alpaca PAPER adapter"]
-    Broker --> Reconcile["Order/fill reconciliation"]
+    Broker --> Reconcile["Order and fill reconciliation"]
     Reconcile --> Protect["Protect or flatten"]
     Reconcile --> Journal["Journal + review"]
 ```
 
-The adapter uses paper endpoints and ownership checks. A timeout is not proof an order failed: recovery must inspect existing orders before another submission.
+## Decisions that matter
 
-## Verification
+- **Order ownership:** deterministic client order IDs distinguish bot orders from unrelated account activity.
+- **Ambiguous responses:** after a timeout, inspect the existing order before deciding whether to submit again.
+- **Partial fills and cancellations:** protection follows filled quantity, and cancellation requires confirmation.
+- **Restart recovery:** reconcile durable SQLite state with broker state rather than assuming the previous process finished cleanly.
+- **Operational visibility:** heartbeat, health checks, and circuit breakers support supervised paper operation.
 
-On 2026-10-20, in the private working tree with its existing environment:
+## Tests and current evidence
+
+The focused configuration, account-safety, broker-safety, reconciliation, and recovery suites produced **142 passed, 1 failed** during the 2026-10-20 review.
+
+The failure is a historical reconciliation test that expects a fixed old count while reading an evolving local runtime journal. It needs an immutable fixture. The other checked cases include foreign orders, partial fills, uncertain broker outcomes, and restart recovery.
+
+<details>
+<summary>Command used in the application checkout</summary>
+
+The application source is private; this documentation repository contains no runnable bot package. In the application checkout, using its existing environment:
 
 ```sh
 cd orb_iex
 .venv/bin/python -m pytest tests/unit/test_config.py tests/unit/test_safety.py tests/unit/test_account_safety.py tests/unit/test_reconcile.py tests/unit/test_recovery.py tests/unit/test_ambiguous_broker.py tests/unit/test_broker_safety.py -q
 ```
 
-**142 passed, 1 failed.** The historical reconciliation test expects a fixed old count but reads an evolving local runtime journal. It needs an immutable synthetic fixture before the suite can be called reproducible. This audit changed neither the test nor the running bot.
+The package declares Python 3.11+, requests, tzdata, and a pytest development extra. These focused offline tests need no keys. Broker-connected checks require a separate paper account and were outside this review.
 
-Coverage includes paper configuration, foreign orders, account safety, partial fills, uncertain broker outcomes, and restart recovery. Offline tests do not establish uninterrupted operation or execution quality.
+</details>
 
-## Setup boundary
+## Scope and attribution
 
-There is no public installation or bot test command in this documentation-only repository. The command above records a private audit; it cannot run after cloning this showcase. The private package declares Python 3.11+, requests, tzdata, and a pytest development extra. Focused offline tests need no keys. Broker-connected checks require a separate paper account and were not run here.
+This is a port of the supplied C# reference `reference/Main.cs`, developed with substantial Claude and Codex assistance. The strategy is not an original invention; the work described here is the Python integration and execution infrastructure.
 
-## Limitations and attribution
+Paper fills differ from real execution. Gross P/L, paper-account realized P/L, and modeled costs are separate quantities. This case study reports engineering behavior, not investment performance. Full-suite and fresh broker/session validation remain outstanding. The in-progress journal dashboard is outside the verified scope.
 
-Paper fills and available data differ from real execution. Paper-account realized P/L, gross P/L, and modeled costs must remain distinct. No return, win-rate, Sharpe, or uptime is claimed. Full-suite and fresh broker/session validation remain outstanding. An in-progress journal dashboard is excluded from the verified functionality above.
-
-This ports the supplied C# reference `reference/Main.cs`; I did not invent opening-range breakout. Development used substantial Claude and Codex assistance. Reference redistribution provenance is unresolved, so neither it nor the private repository history is republished.
+Application source, broker records, credentials, and research data are not distributed here. Reference redistribution provenance remains unresolved.
