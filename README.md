@@ -13,14 +13,12 @@ This repository is an engineering case study. [Portfolio](https://advaitagupta.c
 3. Reconcile fills and order state, maintaining protective orders or flattening when required.
 4. Record execution events and expose heartbeat, health, and circuit-breaker state.
 
-```mermaid
-flowchart TD
-    Data["Market data + signals"] --> Risk["Sizing + safety gates"]
-    Risk --> Intent["Durable order intent"]
-    Intent --> Broker["Alpaca PAPER adapter"]
-    Broker --> Reconcile["Order and fill reconciliation"]
-    Reconcile --> Protect["Protect or flatten"]
-    Reconcile --> Journal["Journal + review"]
+```text
+Market data + signals
+  -> sizing + durable intent
+  -> Alpaca PAPER
+  -> reconcile + protect
+  -> journal + review
 ```
 
 ## Decisions that matter
