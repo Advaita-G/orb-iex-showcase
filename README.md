@@ -4,7 +4,7 @@ A Python opening-range breakout bot for **Alpaca paper trading**, built around r
 
 The central engineering problem: **keeping local state and broker state consistent when orders partially fill, requests time out, or the process restarts**.
 
-This repository is an engineering case study. [Portfolio](https://advaitagupta.com)
+This repository is an engineering case study. The full source and tests are public at [Advaita-G/orb-iex](https://github.com/Advaita-G/orb-iex). [Portfolio](https://advaitagupta.com)
 
 ## How it works
 
@@ -38,11 +38,11 @@ The failure is a historical reconciliation test that expects a fixed old count w
 <details>
 <summary>Command used in the application checkout</summary>
 
-The application source is private; this documentation repository contains no runnable bot package. In the application checkout, using its existing environment:
+The source is public at [Advaita-G/orb-iex](https://github.com/Advaita-G/orb-iex). In that checkout, after `pip install -e ".[dev]"`:
 
 ```sh
-cd orb_iex
-.venv/bin/python -m pytest tests/unit/test_config.py tests/unit/test_safety.py tests/unit/test_account_safety.py tests/unit/test_reconcile.py tests/unit/test_recovery.py tests/unit/test_ambiguous_broker.py tests/unit/test_broker_safety.py -q
+cd orb-iex
+python -m pytest tests/unit/test_config.py tests/unit/test_safety.py tests/unit/test_account_safety.py tests/unit/test_reconcile.py tests/unit/test_recovery.py tests/unit/test_ambiguous_broker.py tests/unit/test_broker_safety.py -q
 ```
 
 The package declares Python 3.11+, requests, tzdata, and a pytest development extra. These focused offline tests need no keys. Broker-connected checks require a separate paper account and were outside this review.
