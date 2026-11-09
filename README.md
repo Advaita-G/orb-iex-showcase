@@ -31,21 +31,25 @@ Market data + signals
 
 ## Tests and current evidence
 
-The focused configuration, account-safety, broker-safety, reconciliation, and recovery suites produced **142 passed, 1 failed** during the 2026-10-20 review.
+Verified on **2026-11-09**, using a clean checkout of public source revision [`9f4025516367`](https://github.com/Advaita-G/orb-iex/tree/9f4025516367797200da6d1f0ae2289eecffa4ad), on macOS with Python 3.13.15:
 
-The failure is a historical reconciliation test that expects a fixed old count while reading an evolving local runtime journal. It needs an immutable fixture. The other checked cases include foreign orders, partial fills, uncertain broker outcomes, and restart recovery.
+- **145 passed** in the focused configuration, account-safety, broker-safety, reconciliation, and recovery suites. This supersedes the older 2026-10-20 focused result, including its historical reconciliation failure.
+- The checked cases cover unrelated account orders, partial fills, uncertain broker responses, and restart recovery using simulated broker state.
+- **Full-suite completion is not verified.** Collection found 887 tests; the broader run was interrupted after 764 passed when it stopped making progress. The isolated `test_restart_at_noon_does_not_rescan_or_duplicate` also did not finish within a 15-second check. A test count is not a guarantee of correctness.
 
 <details>
-<summary>Command used in the application checkout</summary>
+<summary>Reproduce the focused result</summary>
 
-The source is public at [Advaita-G/orb-iex](https://github.com/Advaita-G/orb-iex). In that checkout, after `pip install -e ".[dev]"`:
+The source is public at [Advaita-G/orb-iex](https://github.com/Advaita-G/orb-iex). The full collection also needs the optional research dependencies:
 
 ```sh
 cd orb-iex
+git checkout 9f4025516367797200da6d1f0ae2289eecffa4ad
+python -m pip install -e ".[dev,research]"
 python -m pytest tests/unit/test_config.py tests/unit/test_safety.py tests/unit/test_account_safety.py tests/unit/test_reconcile.py tests/unit/test_recovery.py tests/unit/test_ambiguous_broker.py tests/unit/test_broker_safety.py -q
 ```
 
-The package declares Python 3.11+, requests, tzdata, and a pytest development extra. These focused offline tests need no keys. Broker-connected checks require a separate paper account and were outside this review.
+These focused offline tests need no keys. The incomplete broader run used `python -m pytest -q`. Broker-connected checks require a separate paper account and were outside this review.
 
 </details>
 
@@ -53,6 +57,6 @@ The package declares Python 3.11+, requests, tzdata, and a pytest development ex
 
 This is a port of the supplied C# reference `reference/Main.cs`, developed with substantial Claude and Codex assistance. The strategy is not an original invention; the work described here is the Python integration and execution infrastructure.
 
-Paper fills differ from real execution. Gross P/L, paper-account realized P/L, and modeled costs are separate quantities. This case study reports engineering behavior, not investment performance. Full-suite and fresh broker/session validation remain outstanding. The in-progress journal dashboard is outside the verified scope.
+Paper fills differ from real execution. Gross P/L, paper-account realized P/L, and modeled costs are separate quantities. This case study reports engineering behavior, not investment performance. Full-suite completion and fresh broker/session validation remain outstanding. The journal dashboard is outside the verified scope of this test run.
 
-Application source, broker records, credentials, and research data are not distributed here. Reference redistribution provenance remains unresolved.
+Application source is available in the linked repository. Broker records, credentials, private research data, and the supplied C# reference are not distributed in this case study.
